@@ -13,13 +13,14 @@ import gdata.calendar.data
 import gdata.calendar.client
 import atom.data
 import gspread
+import time
 
 #Credentials of Psi/EK calendar account
 user = "###"
 password = "###"
 
 #URL of google form response spreadsheet
-eventURL = "https://docs.google.com/a/themightypsi.org/spreadsheet/ccc?key=0ApHaryJCBddQdFBsZEw1STZQajg5RllMTFBScDVpMmc#gid=0"
+eventURL = "###"
 
 #Attempts to connect to google with given credentials
 def attemptLogin():
@@ -28,10 +29,12 @@ def attemptLogin():
     return(client)
     
 
-#Returns an array of titles of all events on the current calendar        
+#Returns an array of titles of all events on the calendar which have yet to pass       
 def getAllCurrentEvents(calendar_client):
     currentEvents = []
-    feed = calendar_client.GetCalendarEventFeed()
+    query = gdata.calendar.client.CalendarEventQuery()
+    query.start_min = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
+    feed = calendar_client.GetCalendarEventFeed(q=query)
     for i, an_event in enumerate(feed.entry):
         currentEvents.append(an_event.title.text)
     return currentEvents
@@ -55,18 +58,33 @@ def getAllSpreadsheetEvents():
 def scrapeEvent(row):
     eventEntry = []
     
-    #Pulling pertinent data from the spread sheet
+    #Pulling pertinent data from the spread sheet. Optional fields are protected by try/catch blocks
     submitter = row[1] + " " + row[2]
+    
     editing = False
     if row[3] is not None:
         editing = True 
     title = row[4]
-    where = row[5]
+    
+    try:
+        where = row[5]
+    except:
+        where = ""
+        
     date = row[6].split('/')
     start = row[7].split(':')
     end = row[8].split(':')
-    organizer = row[9]
-    desc = row[10]
+    
+    try:
+        organizer = row[9]
+    except:
+        organizer = ""
+    
+    try:
+        desc = row[10]
+    except:
+        desc = ""
+        
     
     #Create event and append text fields
     event = gdata.calendar.data.CalendarEventEntry()
@@ -89,9 +107,13 @@ def scrapeEvent(row):
     end_time = date[2]+"-"+date[0]+"-"+date[1]+"T"+end[0]+":"+end[1]+":"+end[2]+"-07:00"
     event.when.append(gdata.calendar.data.When(start=start_time, end=end_time))
     
-   
-    #Create tuple with event and editing information
-    eventEntry.append(event)
+    
+    
+    if(time.strptime(date[2] + " " + date [0] + " " + date[1] + " " + 
+                     start[0] + " " + start[1] + " " + start[2], '%Y %m %d %H %M %S') < time.localtime()):
+        eventEntry.append(None)
+    else:
+        eventEntry.append(event)
     eventEntry.append(editing)
     return eventEntry
     
@@ -132,6 +154,9 @@ if __name__ == '__main__':
 
     #For every event to add
     for events in eventList:
+        #If event happened in the past, it will be NoneType
+        if(events[0] == None):
+            continue
         #If the event already exists and doesn't need to be edited, continue
         if(events[0].title.text in currentList and events[1] == False):
             continue
