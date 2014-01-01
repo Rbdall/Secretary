@@ -16,11 +16,11 @@ import gspread
 import time
 
 #Credentials of Psi/EK calendar account
-user = "###"
-password = "###"
+user = "psiekcalendar@gmail.com"
+password = "kkpsitbs"
 
 #URL of google form response spreadsheet
-eventURL = "###"
+eventURL = "https://docs.google.com/spreadsheet/ccc?key=0ApHaryJCBddQdFBsZEw1STZQajg5RllMTFBScDVpMmc&usp=drive_web"
 
 #Attempts to connect to google with given credentials
 def attemptLogin():
@@ -64,25 +64,22 @@ def scrapeEvent(row):
     editing = False
     if row[3] is not None:
         editing = True 
-    title = row[4]
+    title = row[4].rstrip()
     
-    try:
-        where = row[5]
-    except:
+    where = row[5]
+    if(where == None):
         where = ""
         
     date = row[6].split('/')
     start = row[7].split(':')
     end = row[8].split(':')
     
-    try:
-        organizer = row[9]
-    except:
+    organizer = row[9]
+    if(organizer == None):
         organizer = ""
     
-    try:
-        desc = row[10]
-    except:
+    desc = row[10]
+    if(desc == None):
         desc = ""
         
     
@@ -91,7 +88,7 @@ def scrapeEvent(row):
     event.title = atom.data.Title(text=title)
     event.content = atom.data.Content(text='Submitted by: ' + submitter + '\n' 
                                       + "Please direct questions to: " + organizer + '\n' + '\n'
-                                      + "Additional information: " + desc)
+                                        + "Additional information: " + desc)
     event.where.append(gdata.calendar.data.CalendarWhere(value=where))
     
     #Process dates into rfc3339 format and append
@@ -103,8 +100,9 @@ def scrapeEvent(row):
         start[0] = "0" + str(start[0])
     if int(end[0]) < 10:
         end[0] = "0" + str(end[0])
-    start_time = date[2]+"-"+date[0]+"-"+date[1]+"T"+start[0]+":"+start[1]+":"+start[2]+"-07:00"
-    end_time = date[2]+"-"+date[0]+"-"+date[1]+"T"+end[0]+":"+end[1]+":"+end[2]+"-07:00"
+    start_time = date[2]+"-"+date[0]+"-"+date[1]+"T"+start[0]+":"+start[1]+":"+start[2]+"-08:00"#known bug, crashes if start > end
+    end_time = date[2]+"-"+date[0]+"-"+date[1]+"T"+end[0]+":"+end[1]+":"+end[2]+"-08:00"
+
     event.when.append(gdata.calendar.data.When(start=start_time, end=end_time))
     
     
@@ -151,7 +149,6 @@ if __name__ == '__main__':
     eventList = getAllSpreadsheetEvents()
     currentList = getAllCurrentEvents(client)
 
-
     #For every event to add
     for events in eventList:
         #If event happened in the past, it will be NoneType
@@ -161,6 +158,7 @@ if __name__ == '__main__':
         if(events[0].title.text in currentList and events[1] == False):
             continue
         #If the event exists and needs to be edited, query for the existing event and update it
+        #Bug report #1: trailing whitespace striped from event names in feed, not created events, causes infinite adding of events - rstrip added to event creation to fix
         elif(events[0].title.text in currentList and events[1] == True):
             query = gdata.calendar.client.CalendarEventQuery(text_query=events[0].title.text)
             feed = client.GetCalendarEventFeed(q=query)
