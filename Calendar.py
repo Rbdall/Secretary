@@ -15,9 +15,9 @@ import atom.data
 import gspread
 import time
 
-#Credentials of Psi/EK calendar account
-user = "psiekcalendar@gmail.com"
-password = "kkpsitbs"
+#Credentials for login
+user = ""
+password = ""
 
 #URL of google form response spreadsheet
 eventURL = "https://docs.google.com/spreadsheet/ccc?key=0ApHaryJCBddQdFBsZEw1STZQajg5RllMTFBScDVpMmc&usp=drive_web"
