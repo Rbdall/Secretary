@@ -30,7 +30,7 @@ def attemptLogin():
     
 
 #Returns an array of titles of all events on the calendar which have yet to pass       
-def getAllCurrentEvents(calendar_client):
+def getAllCurrentEvents(calendar_client):#TODO: use seperate calendars as client
     currentEvents = []
     query = gdata.calendar.client.CalendarEventQuery()
     query.start_min = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
@@ -55,7 +55,7 @@ def getAllSpreadsheetEvents():
     return events
 
 #Creates a single event from a row 
-def scrapeEvent(row):
+def scrapeEvent(row):#TODO: Handle which calendar the event is for
     eventEntry = []
     
     #Pulling pertinent data from the spread sheet. Optional fields are protected by try/catch blocks
@@ -145,6 +145,9 @@ if __name__ == '__main__':
     #Attempts to log into google
     client = attemptLogin()
     
+    #TODO: for calendars in client, make list of events in calendar
+    #       Parse spreadsheet into events for calendars?
+    #        add to each calendar
     #Pulls list of events to add and events currently on calendar
     eventList = getAllSpreadsheetEvents()
     currentList = getAllCurrentEvents(client)
